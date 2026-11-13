@@ -1,9 +1,11 @@
 :root {
-  --bg: #f6f7f9;
+  /* Neutrals are tinted toward the brand navy and ice, not plain grey. */
+  --bg: #eef3f8;
   --panel: #ffffff;
-  --text: #1f2937;
-  --muted: #6b7280;
-  --line: #e5e7eb;
+  --text: #10233b;
+  --muted: #5b6f87;
+  --faint: #a3b2c4;
+  --line: #d6e0eb;
   /* Brand: the favicon's alpine navy, ice snow and ski orange. */
   --brand: #0f2a4a;
   --brand-deep: #0a1c33;
@@ -24,7 +26,8 @@ body { margin: 0; }
 button { font: inherit; cursor: pointer; }
 input { font: inherit; }
 
-.app { display: flex; flex-direction: column; height: 100vh; }
+/* dvh follows the phone's collapsing URL bar; vh is the fallback for older browsers. */
+.app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
 
 /* Header: alpine navy with a snow slope rising to the right, like the favicon. */
 header {
@@ -63,7 +66,11 @@ main { min-width: 0; min-height: 0; overflow: auto; position: relative; }
 .empty-state.small { padding: 24px 16px; gap: 8px; font-size: 12px; }
 .compact-month {
   position: sticky; top: 0; z-index: 1; margin: 0; padding: 6px 16px;
-  background: var(--bg); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+  background: var(--brand); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #fff;
+}
+.compact-month::before {
+  content: ''; display: inline-block; width: 10px; height: 3px; margin-right: 7px; vertical-align: middle;
+  background: var(--ski); border-radius: 2px; transform: rotate(-49deg);
 }
 .compact-row {
   display: flex; align-items: center; width: 100%; gap: 0; border: 0; background: none;
@@ -71,14 +78,14 @@ main { min-width: 0; min-height: 0; overflow: auto; position: relative; }
 }
 .compact-row:hover, .compact-row.sel { background: var(--accent-soft); }
 .compact-row.sel { box-shadow: inset 3px 0 0 var(--accent); }
-.compact-day { flex: none; width: 58px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.compact-day { flex: none; width: 58px; color: var(--brand-mid); font-weight: 600; font-variant-numeric: tabular-nums; }
 .compact-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.compact-row.past, .compact-row.past .muted, .compact-row.past .compact-day { color: #b0b4ba; }
+.compact-row.past, .compact-row.past .muted, .compact-row.past .compact-day { color: var(--faint); font-weight: 400; }
 .compact-today {
   display: flex; align-items: center; gap: 8px; padding: 4px 16px; scroll-margin-top: 28px;
-  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent);
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ski-deep);
 }
-.compact-today::after { content: ''; flex: 1; height: 2px; background: var(--accent); border-radius: 1px; }
+.compact-today::after { content: ''; flex: 1; height: 2px; background: var(--ski); border-radius: 1px; }
 
 /* Filters */
 .filters { background: var(--panel); border-right: 1px solid var(--line); padding: 16px; overflow-y: auto; }
@@ -88,6 +95,8 @@ main { min-width: 0; min-height: 0; overflow: auto; position: relative; }
   content: ''; display: inline-block; width: 10px; height: 3px; margin-right: 6px; vertical-align: middle;
   background: var(--ski); border-radius: 2px; transform: rotate(-35deg);
 }
+.official-note { margin: 24px 0 0; padding-top: 12px; border-top: 1px solid var(--line); font-size: 12px; line-height: 1.5; color: var(--muted); }
+.official-note a { color: var(--accent); font-weight: 600; }
 .filters h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 0 0 8px; }
 .search { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -98,7 +107,7 @@ main { min-width: 0; min-height: 0; overflow: auto; position: relative; }
 .chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 .segmented { display: flex; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 2px; }
 .segmented button { flex: 1; border: 0; background: transparent; padding: 5px 8px; border-radius: 6px; font-size: 12px; color: var(--muted); }
-.segmented button.on { background: var(--panel); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }
+.segmented button.on { background: var(--panel); color: var(--text); box-shadow: 0 1px 2px rgb(15 42 74 / 0.12); }
 .color-key { flex: none; padding: 10px 16px 12px; border-bottom: 1px solid var(--line); display: grid; gap: 8px; }
 .color-key-head { display: flex; align-items: center; gap: 10px; }
 .color-key-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); flex: none; }
@@ -123,8 +132,8 @@ main { min-width: 0; min-height: 0; overflow: auto; position: relative; }
 .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .cal-wd { background: var(--bg); padding: 6px 8px; font-size: 11px; text-transform: uppercase; color: var(--muted); }
 .cal-cell { background: var(--panel); min-height: 96px; padding: 4px; display: flex; flex-direction: column; gap: 2px; }
-.cal-cell.outside { background: #fafafa; }
-.cal-cell.outside .cal-date { color: #c4c7cc; }
+.cal-cell.outside { background: #f6f9fc; }
+.cal-cell.outside .cal-date { color: var(--faint); }
 .cal-cell.today .cal-date { background: var(--ski); color: #fff; border-radius: 999px; padding: 0 6px; align-self: flex-start; }
 .cal-date { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
 .cal-event {
@@ -144,7 +153,7 @@ main { min-width: 0; min-height: 0; overflow: auto; position: relative; }
 .list tbody tr:hover, .list tr.sel { background: var(--accent-soft); }
 .list .num { text-align: right; }
 .nowrap { white-space: nowrap; }
-.tag { margin-left: 6px; font-size: 10px; background: #111827; color: #fff; border-radius: 4px; padding: 1px 5px; }
+.tag { margin-left: 6px; font-size: 10px; background: var(--brand); color: #fff; border-radius: 4px; padding: 1px 5px; }
 
 /* Detail */
 .detail { background: var(--panel); border-left: 1px solid var(--line); padding: 20px; overflow-y: auto; position: relative; }
@@ -163,6 +172,111 @@ main { min-width: 0; min-height: 0; overflow: auto; position: relative; }
 .place-list { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 8px; }
 .place-list .link { display: flex; align-items: baseline; color: var(--text); }
 .place-list .link:hover { color: var(--accent); }
+
+.button.block { display: block; width: 100%; text-align: center; }
+
+/* Phone layout (App adds .mobile below 760px): full-screen views, filters and details in bottom sheets. */
+.app.mobile { --sheet-radius: 16px; --tap: 44px; overflow: hidden; }
+.app.mobile header {
+  gap: 10px; padding: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 10px max(12px, env(safe-area-inset-left));
+}
+.app.mobile .brand { font-size: 16px; gap: 8px; white-space: nowrap; }
+.app.mobile .brand small { display: none; }
+.app.mobile .tabs button { padding: 0 12px; min-height: 36px; }
+.app.mobile button, .app.mobile a, .app.mobile label { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
+.mobile-bar {
+  flex: none; display: flex; gap: 8px; padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--line);
+}
+/* 16px stops iOS zooming into the field on focus. */
+.app.mobile .search { font-size: 16px; min-height: var(--tap); padding: 8px 12px; border-radius: 10px; background: var(--bg); }
+.filters-button {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: var(--tap); padding: 0 14px;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--text); font-weight: 600;
+}
+.filters-button.on { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.filters-count {
+  min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--ski-deep); color: #fff;
+  font-size: 12px; line-height: 20px; text-align: center;
+}
+
+.app.mobile .body { display: flex; flex-direction: column; overflow: hidden; }
+.app.mobile main { flex: 1; min-height: 0; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.app.mobile main > .compact { height: 100%; max-height: none; padding-bottom: env(safe-area-inset-bottom); }
+/* While the details sheet is up, lists keep the picked race (and the last rows) above it. */
+.app.mobile.has-detail main > .compact, .app.mobile.has-detail main:has(.calendar) {
+  scroll-padding-bottom: 55dvh; padding-bottom: 55dvh;
+}
+/* Pinch to zoom on a phone; the +/- buttons only take room. */
+.app.mobile .mapboxgl-ctrl-top-right .mapboxgl-ctrl-group { display: none; }
+
+/* Bigger rows and chips for fingers. */
+.app.mobile .compact-row { min-height: var(--tap); font-size: 14px; padding: 6px 16px; }
+.app.mobile .compact-day { width: 64px; }
+.app.mobile .compact-month { font-size: 12px; padding: 8px 16px; }
+.app.mobile .chip { min-height: 38px; padding: 6px 14px; font-size: 14px; }
+.app.mobile .chips { gap: 8px; }
+.app.mobile .segmented button { min-height: 36px; font-size: 13px; }
+.app.mobile .check { min-height: var(--tap); margin: 0; font-size: 15px; }
+.app.mobile .check input { width: 20px; height: 20px; }
+.app.mobile .link { min-height: 36px; }
+
+/* Bottom sheets */
+.sheet-backdrop {
+  position: fixed; inset: 0; z-index: 20; background: rgb(10 28 51 / 0.45);
+  opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+}
+.sheet-backdrop.open { opacity: 1; pointer-events: auto; }
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; display: flex; flex-direction: column;
+  max-height: 85dvh; background: var(--panel); border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+  box-shadow: 0 -8px 30px rgb(10 28 51 / 0.22);
+  transform: translateY(105%); transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+}
+.sheet.open { transform: translateY(0); }
+.sheet.dragging { transition: none; }
+.sheet-grab { flex: none; display: flex; justify-content: center; padding: 10px 0 6px; touch-action: none; cursor: grab; }
+.sheet-handle { width: 40px; height: 5px; border-radius: 3px; background: var(--line); }
+.sheet-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.sheet-footer {
+  flex: none; padding: 10px 16px max(10px, env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--panel);
+}
+.sheet-footer .button { min-height: var(--tap); font-size: 15px; }
+.filters-sheet .color-key { padding: 4px 16px 14px; }
+.filters-sheet .filters { border: 0; padding: 4px 16px 16px; overflow: visible; }
+/* Details leave the top of the map visible, so the picked dot stays in view above the sheet. */
+.detail-sheet { max-height: 55dvh; }
+.detail-sheet .detail { border: 0; padding: 0 16px max(16px, env(safe-area-inset-bottom)); overflow: visible; }
+.detail-sheet .detail h2 { font-size: 20px; margin-right: 40px; }
+.detail-sheet .detail .close { top: 4px; right: 8px; width: var(--tap); height: var(--tap); font-size: 26px; }
+.detail-sheet .actions .button { flex: 1; min-height: var(--tap); text-align: center; line-height: 28px; }
+.detail-sheet .place-list .link { min-height: 40px; align-items: center; }
+
+/* Calendar on a phone: colour bars per day, the month's races listed below. */
+.app.mobile .calendar { padding: 12px 10px calc(16px + env(safe-area-inset-bottom)); }
+.app.mobile .cal-head h2 { font-size: 16px; }
+.app.mobile .cal-head h2 .muted { display: block; font-size: 12px; font-weight: 400; }
+.app.mobile .cal-head button { width: var(--tap); height: var(--tap); }
+.app.mobile .cal-wd { padding: 4px 0; text-align: center; font-size: 10px; }
+.app.mobile .cal-cell {
+  min-height: 52px; padding: 4px 3px; border: 0; border-radius: 0; font: inherit; color: inherit; text-align: left;
+  align-items: stretch; justify-content: flex-start; gap: 2px;
+}
+.app.mobile .cal-cell:disabled { cursor: default; }
+.app.mobile .cal-cell.sel { background: var(--accent-soft); }
+.app.mobile .cal-cell .cal-date { font-size: 12px; text-align: left; margin: 0 0 1px; }
+.app.mobile .cal-cell.today .cal-date { align-self: flex-start; }
+.cal-bar { display: block; height: 5px; border-radius: 3px; }
+.cal-more { font-size: 9px; line-height: 1; color: var(--muted); }
+.cal-agenda { list-style: none; margin: 12px -10px 0; padding: 0; border-top: 1px solid var(--line); }
+.cal-agenda .compact-row { border-bottom: 1px solid var(--line); }
+.app.mobile .tbc { padding: 0 6px; }
+.app.mobile .tbc .cal-event { max-width: 100%; font-size: 13px; padding: 6px 8px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet, .sheet-backdrop { transition: none; }
+}
 
 @media (max-width: 1000px) {
   .body { grid-template-columns: 1fr; grid-template-rows: auto 60vh auto; overflow-y: auto; }

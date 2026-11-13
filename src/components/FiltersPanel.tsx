@@ -87,6 +87,14 @@ export function FiltersPanel({ filters, onChange, shown, total, races, colorBy }
           Show weekly series once
         </label>
       </section>
+
+      <p className="official-note">
+        Dates and details can change. Check the{' '}
+        <a href="https://www.ski-alpinisme.fr/calendrier" target="_blank" rel="noopener noreferrer">
+          official calendar on ski-alpinisme.fr ↗
+        </a>{' '}
+        for the latest information.
+      </p>
     </aside>
   )
 }

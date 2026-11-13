@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyFilters, DEFAULT_FILTERS, isPast, nextRace, todayIso, type Filters } from './filters'
+import { activeFilterCount, applyFilters, DEFAULT_FILTERS, isPast, nextRace, todayIso, type Filters } from './filters'
 import type { Race } from './types'
 
 const race = (id: string, start_date: string | null, end_date: string | null = null) =>
@@ -56,5 +56,16 @@ describe('applyFilters', () => {
     const races = [r('tbc', null), r('early', '2026-01-01'), r('late', '2027-03-01')]
     const stale = { ...DEFAULT_FILTERS, from: '2026-06-01', to: '2026-12-31', includeTbc: false } as Filters
     expect(applyFilters(races, stale).map((x) => x.id)).toEqual(['tbc', 'early', 'late'])
+  })
+})
+
+describe('activeFilterCount', () => {
+  it('is zero for the defaults, whatever the search', () => {
+    expect(activeFilterCount({ ...DEFAULT_FILTERS, search: 'courchevel' })).toBe(0)
+  })
+
+  it('counts each chip and each checkbox', () => {
+    const f: Filters = { ...DEFAULT_FILTERS, levels: ['Classic', 'Promo'], months: ['1'], nightOnly: true }
+    expect(activeFilterCount(f)).toBe(4)
   })
 })

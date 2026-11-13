@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { type ColorBy } from './colors'
 import { ColorKey } from './components/ColorKey'
 import { CalendarView } from './components/CalendarView'
@@ -8,9 +8,11 @@ import { FiltersPanel } from './components/FiltersPanel'
 import { ListView } from './components/ListView'
 import { Logo } from './components/Logo'
 import { MapView } from './components/MapView'
+import { Sheet } from './components/Sheet'
 import { RACES } from './data'
-import { applyFilters, DEFAULT_FILTERS, type Filters } from './filters'
+import { activeFilterCount, applyFilters, DEFAULT_FILTERS, type Filters } from './filters'
 import type { Race, Selection } from './types'
+import { MOBILE_QUERY, useMediaQuery } from './useMediaQuery'
 
 type View = 'map' | 'calendar' | 'list'
 
@@ -46,12 +48,56 @@ export default function App() {
   const [selection, setSelection] = useState<Selection>(null)
 
   const filtered = useMemo(() => applyFilters(races, filters), [races, filters])
+  const mobile = useMediaQuery(MOBILE_QUERY)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+
+  // Keep the last race on screen while the details sheet slides away.
+  const shownSelection = useRef<Selection>(null)
+  if (selection) shownSelection.current = selection
+
+  // Leaving the phone layout: its sheets no longer exist.
+  useEffect(() => {
+    if (!mobile) setFiltersOpen(false)
+  }, [mobile])
+
+  const viewProps = { races: filtered, selection, onSelect: setSelection, colorBy }
+  const search = (
+    <input
+      className="search"
+      type="search"
+      enterKeyHint="search"
+      placeholder="Search race, town, region…"
+      aria-label="Search races"
+      value={filters.search}
+      onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+    />
+  )
+  const colorKey = (
+    <ColorKey
+      races={races}
+      filters={filters}
+      onChange={setFilters}
+      colorBy={colorBy}
+      onColorBy={(c) => setPrefs({ ...prefs, colorBy: c })}
+    />
+  )
+  const filtersPanel = (
+    <FiltersPanel
+      filters={filters}
+      onChange={setFilters}
+      shown={filtered.length}
+      total={races.length}
+      races={races}
+      colorBy={colorBy}
+    />
+  )
+  const nFilters = activeFilterCount(filters)
 
   return (
-    <div className="app">
+    <div className={`app ${mobile ? 'mobile' : ''} ${mobile && selection ? 'has-detail' : ''}`}>
       <header>
         <h1 className="brand">
-          <Logo size={34} />
+          <Logo size={mobile ? 28 : 34} />
           <span>
             Skimo races
             <small>Ski-mountaineering in the French Alps · 2026–27</small>
@@ -59,47 +105,69 @@ export default function App() {
         </h1>
         <nav className="tabs">
           {(['map', 'calendar', 'list'] as View[]).map((v) => (
-            <button key={v} className={view === v ? 'on' : ''} onClick={() => setView(v)}>
+            <button key={v} className={view === v ? 'on' : ''} aria-current={view === v} onClick={() => setView(v)}>
               {v[0].toUpperCase() + v.slice(1)}
             </button>
           ))}
         </nav>
       </header>
+      {mobile && (
+        <div className="mobile-bar">
+          {search}
+          <button className={`filters-button ${nFilters ? 'on' : ''}`} onClick={() => setFiltersOpen(true)}>
+            Filters{nFilters > 0 && <span className="filters-count">{nFilters}</span>}
+          </button>
+        </div>
+      )}
       <div className="body">
-        <FiltersPanel
-          filters={filters}
-          onChange={setFilters}
-          shown={filtered.length}
-          total={races.length}
-          races={races}
-          colorBy={colorBy}
-        />
+        {!mobile && filtersPanel}
         <main>
-          {view === 'map' && <MapView races={filtered} selection={selection} onSelect={setSelection} colorBy={colorBy} />}
-          {view === 'calendar' && <CalendarView races={filtered} selection={selection} onSelect={setSelection} colorBy={colorBy} />}
-          {view === 'list' && <ListView races={filtered} selection={selection} onSelect={setSelection} colorBy={colorBy} />}
+          {view === 'map' && <MapView {...viewProps} mobile={mobile} />}
+          {view === 'calendar' && <CalendarView {...viewProps} mobile={mobile} />}
+          {view === 'list' && (mobile ? <CompactList {...viewProps} /> : <ListView {...viewProps} />)}
         </main>
-        <aside className="sidebar">
-          <div className="sidebar-search">
-            <input
-              className="search"
-              type="search"
-              placeholder="Search race, town, region…"
-              value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-            />
-          </div>
-          <ColorKey
-            races={races}
-            filters={filters}
-            onChange={setFilters}
-            colorBy={colorBy}
-            onColorBy={(c) => setPrefs({ ...prefs, colorBy: c })}
-          />
-          <DetailPanel races={races} selection={selection} onSelect={setSelection} colorBy={colorBy} />
-          <CompactList races={filtered} selection={selection} onSelect={setSelection} colorBy={colorBy} />
-        </aside>
+        {!mobile && (
+          <aside className="sidebar">
+            <div className="sidebar-search">{search}</div>
+            {colorKey}
+            <DetailPanel races={races} selection={selection} onSelect={setSelection} colorBy={colorBy} />
+            <CompactList {...viewProps} />
+          </aside>
+        )}
       </div>
+      {mobile && (
+        <>
+          <Sheet
+            modal
+            open={filtersOpen}
+            onClose={() => setFiltersOpen(false)}
+            label="Filters"
+            className="filters-sheet"
+            footer={
+              <button className="button block" onClick={() => setFiltersOpen(false)}>
+                Show {filtered.length} {filtered.length === 1 ? 'race' : 'races'}
+              </button>
+            }
+          >
+            {colorKey}
+            {filtersPanel}
+          </Sheet>
+          <Sheet
+            open={!!selection}
+            onClose={() => setSelection(null)}
+            label="Race details"
+            className="detail-sheet"
+            scrollKey={JSON.stringify(selection)}
+          >
+            <DetailPanel
+              races={races}
+              selection={shownSelection.current}
+              onSelect={setSelection}
+              colorBy={colorBy}
+            />
+          </Sheet>
+        </>
+      )}
     </div>
   )
 }

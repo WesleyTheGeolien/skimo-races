@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { colorFor, type ColorBy } from '../colors'
+import { shortDay } from '../compact'
 import type { Race, Selection } from '../types'
 
 interface Props {
@@ -7,7 +8,12 @@ interface Props {
   selection: Selection
   onSelect: (s: Selection) => void
   colorBy: ColorBy
+  /** Phone layout: day cells show colour bars, and the month's races are listed below the grid. */
+  mobile?: boolean
 }
+
+/** Bars drawn in a phone-sized day cell before it shows "+n". */
+const MAX_BARS = 3
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -15,7 +21,7 @@ const iso = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
 /** Month grid; multi-day races appear on every day they cover. */
-export function CalendarView({ races, selection, onSelect, colorBy }: Props) {
+export function CalendarView({ races, selection, onSelect, colorBy, mobile = false }: Props) {
   const dated = races.filter((r) => r.start_date)
   const firstMonth = useMemo(() => {
     const today = iso(new Date())
@@ -78,10 +84,22 @@ export function CalendarView({ races, selection, onSelect, colorBy }: Props) {
   const shift = (n: number) => setMonth(new Date(month.getFullYear(), month.getMonth() + n, 1))
   const today = iso(new Date())
   const tbc = races.filter((r) => !r.start_date)
-  const inMonth = dated.filter((r) => {
+  const monthRaces = dated.filter((r) => {
     const s = new Date(`${r.start_date}T12:00:00`)
     return s.getMonth() === month.getMonth() && s.getFullYear() === month.getFullYear()
-  }).length
+  })
+  const inMonth = monthRaces.length
+  const isSel = (r: Race) => selection?.kind === 'race' && selection.id === r.id
+
+  // Phone: a tap on a day scrolls the agenda to that day's first race.
+  const showDay = (k: string) => {
+    const first = byDay.get(k)?.[0]
+    if (!first) return
+    root.current
+      ?.querySelector(`[data-race="${CSS.escape(first.id)}"]`)
+      ?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    onSelect({ kind: 'race', id: first.id })
+  }
 
   return (
     <div className="calendar" ref={root}>
@@ -107,6 +125,24 @@ export function CalendarView({ races, selection, onSelect, colorBy }: Props) {
           const k = iso(d)
           const list = byDay.get(k) ?? []
           const outside = d.getMonth() !== month.getMonth()
+          if (mobile) {
+            const label = `${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}: ${list.length} races`
+            return (
+              <button
+                key={k}
+                className={`cal-cell ${outside ? 'outside' : ''} ${k === today ? 'today' : ''} ${list.some(isSel) ? 'sel' : ''}`}
+                disabled={!list.length}
+                aria-label={label}
+                onClick={() => showDay(k)}
+              >
+                <span className="cal-date">{d.getDate()}</span>
+                {list.slice(0, MAX_BARS).map((r) => (
+                  <span key={r.id} className="cal-bar" style={{ background: colorFor(r, colorBy) }} />
+                ))}
+                {list.length > MAX_BARS && <span className="cal-more">+{list.length - MAX_BARS}</span>}
+              </button>
+            )
+          }
           return (
             <div key={k} className={`cal-cell ${outside ? 'outside' : ''} ${k === today ? 'today' : ''}`}>
               <div className="cal-date">{d.getDate()}</div>
@@ -125,6 +161,26 @@ export function CalendarView({ races, selection, onSelect, colorBy }: Props) {
           )
         })}
       </div>
+      {mobile && (
+        <ul className="cal-agenda">
+          {monthRaces.map((r) => (
+            <li key={r.id}>
+              <button
+                data-race={r.id}
+                className={`compact-row ${isSel(r) ? 'sel' : ''}`}
+                onClick={() => onSelect({ kind: 'race', id: r.id })}
+              >
+                <span className="compact-day">{shortDay(r)}</span>
+                <span className="dot" style={{ background: colorFor(r, colorBy) }} />
+                <span className="compact-name">
+                  {r.name}
+                  <span className="muted"> · {r.location}</span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
       {tbc.length > 0 && (
         <div className="tbc">
           <h3>No date yet</h3>

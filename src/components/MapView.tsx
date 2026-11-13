@@ -7,6 +7,7 @@ import { placeColor, type ColorBy } from '../colors'
 import type { Race, Selection } from '../types'
 import { EmptyState } from './Logo'
 import { applyWinterTheme } from '../winter'
+import { DOT_PAINT, HALO_PAINT } from '../markerStyle'
 
 const TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined
 
@@ -21,7 +22,15 @@ interface Props {
   selection: Selection
   onSelect: (s: Selection) => void
   colorBy: ColorBy
+  /** Phone layout: race details cover the bottom of the map in a sheet. */
+  mobile?: boolean
 }
+
+/** Pixels around a click or tap that still count as hitting a dot. */
+const TAP_SLOP_MOUSE = 4
+const TAP_SLOP_TOUCH = 14
+/** Share of the map height the details sheet covers on a phone; the picked dot is centred above it. */
+const SHEET_SHARE = 0.45
 
 /** One feature per place, so a venue with many dates (Courchevel) is one dot sized by count. */
 function toGeoJSON(races: Race[], colorBy: ColorBy): FeatureCollection<Point> {
@@ -43,7 +52,7 @@ function toGeoJSON(races: Race[], colorBy: ColorBy): FeatureCollection<Point> {
   }
 }
 
-export function MapView({ races, selection, onSelect, colorBy }: Props) {
+export function MapView({ races, selection, onSelect, colorBy, mobile = false }: Props) {
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
   const ready = useRef(false)
@@ -52,6 +61,8 @@ export function MapView({ races, selection, onSelect, colorBy }: Props) {
   geojsonRef.current = geojson
   const onSelectRef = useRef(onSelect)
   onSelectRef.current = onSelect
+  const mobileRef = useRef(mobile)
+  mobileRef.current = mobile
 
   useEffect(() => {
     if (!TOKEN || !container.current) return
@@ -69,18 +80,9 @@ export function MapView({ races, selection, onSelect, colorBy }: Props) {
     m.on('load', () => {
       applyWinterTheme(m)
       m.addSource('races', { type: 'geojson', data: geojsonRef.current })
-      m.addLayer({
-        id: 'race-dots',
-        type: 'circle',
-        source: 'races',
-        paint: {
-          'circle-color': ['get', 'color'],
-          'circle-radius': ['interpolate', ['linear'], ['get', 'count'], 1, 7, 5, 11, 20, 17],
-          'circle-stroke-color': '#fff',
-          'circle-stroke-width': 2,
-          'circle-opacity': 0.9,
-        },
-      })
+      // A dark halo under the dots keeps them apart from the piste overlay when zoomed in.
+      m.addLayer({ id: 'race-halo', type: 'circle', source: 'races', paint: HALO_PAINT } as mapboxgl.CircleLayerSpecification)
+      m.addLayer({ id: 'race-dots', type: 'circle', source: 'races', paint: DOT_PAINT } as mapboxgl.CircleLayerSpecification)
       m.addLayer({
         id: 'race-counts',
         type: 'symbol',
@@ -101,11 +103,23 @@ export function MapView({ races, selection, onSelect, colorBy }: Props) {
           'text-anchor': 'top',
           'text-optional': true,
         },
-        paint: { 'text-color': '#1f2937', 'text-halo-color': '#fff', 'text-halo-width': 1.5 },
+        paint: { 'text-color': '#10233b', 'text-halo-color': '#fff', 'text-halo-width': 1.5 },
       })
-      m.on('click', 'race-dots', (e) => {
-        const key = e.features?.[0]?.properties?.key as string | undefined
+      // Hit-test a box around the tap, not the exact pixel, so small dots are easy to hit with a finger.
+      m.on('click', (e) => {
+        const pad = mobileRef.current ? TAP_SLOP_TOUCH : TAP_SLOP_MOUSE
+        const { x, y } = e.point
+        const hits = m.queryRenderedFeatures(
+          [
+            [x - pad, y - pad],
+            [x + pad, y + pad],
+          ],
+          { layers: ['race-dots'] },
+        )
+        const key = hits[0]?.properties?.key as string | undefined
         if (key) onSelectRef.current({ kind: 'place', key })
+        // On a phone, a tap on empty map closes the details sheet.
+        else if (mobileRef.current) onSelectRef.current(null)
       })
       m.on('mouseenter', 'race-dots', () => (m.getCanvas().style.cursor = 'pointer'))
       m.on('mouseleave', 'race-dots', () => (m.getCanvas().style.cursor = ''))
@@ -139,7 +153,9 @@ export function MapView({ races, selection, onSelect, colorBy }: Props) {
     } else {
       ;[lat, lon] = selection.key.split(',').map(Number)
     }
-    if (lat != null && lon != null) m.flyTo({ center: [lon, lat], zoom: Math.max(m.getZoom(), 9), duration: 800 })
+    if (lat == null || lon == null) return
+    const offsetY = mobile ? -(m.getContainer().clientHeight * SHEET_SHARE) / 2 : 0
+    m.flyTo({ center: [lon, lat], zoom: Math.max(m.getZoom(), 9), duration: 800, offset: [0, offsetY] })
   }, [selection]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!TOKEN) {

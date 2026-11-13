@@ -18,6 +18,13 @@ export const DEFAULT_FILTERS: Filters = {
   hideSeries: false,
 }
 
+/** How many filters differ from the defaults, search excluded (it has its own box). */
+export function activeFilterCount(f: Filters): number {
+  return (
+    f.levels.length + f.disciplines.length + f.months.length + Number(f.nightOnly) + Number(f.hideSeries)
+  )
+}
+
 const normalise = (s: string) =>
   s
     .toLowerCase()
