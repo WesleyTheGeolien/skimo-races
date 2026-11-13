@@ -11,6 +11,7 @@ import { MapView } from './components/MapView'
 import { Sheet } from './components/Sheet'
 import { RACES } from './data'
 import { activeFilterCount, applyFilters, DEFAULT_FILTERS, type Filters } from './filters'
+import { selectionFromUrl, urlForSelection } from './share'
 import { OFFICIAL_CALENDAR_URL, type Race, type Selection } from './types'
 import { MOBILE_QUERY, useMediaQuery } from './useMediaQuery'
 
@@ -45,7 +46,14 @@ export default function App() {
   const [prefs, setPrefs] = usePersisted<{ colorBy: ColorBy }>('skimo.prefs', { colorBy: 'level' })
   const { colorBy } = prefs
   const [view, setView] = useState<View>('map')
-  const [selection, setSelection] = useState<Selection>(null)
+  // A shared link (?race=<id>) opens on that race.
+  const [selection, setSelection] = useState<Selection>(() => selectionFromUrl(window.location.href, races))
+
+  // Keep the address bar pointing at the selected race, so it can be copied or bookmarked.
+  useEffect(() => {
+    const url = urlForSelection(window.location.href, selection)
+    if (url !== window.location.href) history.replaceState(history.state, '', url)
+  }, [selection])
 
   const filtered = useMemo(() => applyFilters(races, filters), [races, filters])
   const mobile = useMediaQuery(MOBILE_QUERY)

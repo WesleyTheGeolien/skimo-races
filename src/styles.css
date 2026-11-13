@@ -171,7 +171,19 @@ main { min-width: 0; min-height: 0; overflow: auto; position: relative; }
 .badge { font-size: 11px; color: #fff; padding: 2px 8px; border-radius: 999px; }
 .badge.outline { color: var(--text); border: 1px solid var(--line); }
 .badge.warn { background: #f59e0b; }
-.actions { display: flex; gap: 8px; margin: 16px 0 8px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 8px; }
+.detail .share {
+  position: absolute; top: 10px; right: 40px; width: 32px; height: 32px; display: grid; place-items: center;
+  border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; padding: 0;
+}
+.detail .share:hover { background: var(--accent-soft); color: var(--accent); }
+.detail .share.done { color: #16a34a; }
+.share-note:empty { display: none; }
+.share-note {
+  position: absolute; top: calc(100% + 4px); right: 0; white-space: nowrap; pointer-events: none;
+  background: var(--text); color: var(--panel); font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 6px;
+}
+.detail h2 { margin-right: 64px; }
 .button { display: inline-block; background: var(--ski-deep); color: #fff; border: 0; padding: 8px 12px; border-radius: 8px; text-decoration: none; font-weight: 600; }
 .button:hover { background: #9a3412; }
 .button.secondary { background: var(--bg); color: var(--text); border: 1px solid var(--line); }
@@ -255,7 +267,9 @@ main { min-width: 0; min-height: 0; overflow: auto; position: relative; }
 /* Details leave the top of the map visible, so the picked dot stays in view above the sheet. */
 .detail-sheet { max-height: 55dvh; }
 .detail-sheet .detail { border: 0; padding: 0 16px max(16px, env(safe-area-inset-bottom)); overflow: visible; }
-.detail-sheet .detail h2 { font-size: 20px; margin-right: 40px; }
+.detail-sheet .detail h2 { font-size: 20px; margin-right: 92px; }
+.detail-sheet .detail .share { top: 4px; right: 52px; width: var(--tap); height: var(--tap); }
+.detail-sheet .detail .share svg { width: 22px; height: 22px; }
 .detail-sheet .detail .close { top: 4px; right: 8px; width: var(--tap); height: var(--tap); font-size: 26px; }
 .detail-sheet .actions .button { flex: 1; min-height: var(--tap); text-align: center; line-height: 28px; }
 .detail-sheet .place-list .link { min-height: 40px; align-items: center; }
