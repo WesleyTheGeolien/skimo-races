@@ -1,6 +1,6 @@
 import { formatDateRange, nextRace, placeKey } from '../filters'
 import { colorFor, type ColorBy } from '../colors'
-import { LEVEL_COLORS, type Race, type Selection } from '../types'
+import { LEVEL_COLORS, OFFICIAL_CALENDAR_URL, type Race, type Selection } from '../types'
 
 interface Props {
   races: Race[] // all races, so a selection survives filter changes
@@ -47,13 +47,16 @@ export function DetailPanel({ races, selection, onSelect, colorBy }: Props) {
         {r.status !== 'Confirmed' && <span className="badge warn">{r.status}</span>}
       </div>
       {r.details && <p>{r.details}</p>}
-      {r.url && (
-        <div className="actions">
+      <div className="actions">
+        {r.url && (
           <a href={r.url} target="_blank" rel="noreferrer" className="button">
             Race website ↗
           </a>
-        </div>
-      )}
+        )}
+        <a href={OFFICIAL_CALENDAR_URL} target="_blank" rel="noopener noreferrer" className="button secondary">
+          Official calendar ↗
+        </a>
+      </div>
       {others.length > 0 && (
         <>
           <h3 className="other-races">Also at {r.location}</h3>

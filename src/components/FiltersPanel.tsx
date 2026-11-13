@@ -1,6 +1,6 @@
 import { DEFAULT_FILTERS, type Filters } from '../filters'
 import { allItems, FORMAT_COLORS, type ColorBy } from '../colors'
-import { DISCIPLINES, LEVEL_COLORS, LEVELS, type Race } from '../types'
+import { DISCIPLINES, LEVEL_COLORS, LEVELS, OFFICIAL_CALENDAR_URL, type Race } from '../types'
 
 interface Props {
   filters: Filters
@@ -90,7 +90,7 @@ export function FiltersPanel({ filters, onChange, shown, total, races, colorBy }
 
       <p className="official-note">
         Dates and details can change. Check the{' '}
-        <a href="https://www.ski-alpinisme.fr/calendrier" target="_blank" rel="noopener noreferrer">
+        <a href={OFFICIAL_CALENDAR_URL} target="_blank" rel="noopener noreferrer">
           official calendar on ski-alpinisme.fr ↗
         </a>{' '}
         for the latest information.

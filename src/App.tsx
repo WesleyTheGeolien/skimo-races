@@ -11,7 +11,7 @@ import { MapView } from './components/MapView'
 import { Sheet } from './components/Sheet'
 import { RACES } from './data'
 import { activeFilterCount, applyFilters, DEFAULT_FILTERS, type Filters } from './filters'
-import type { Race, Selection } from './types'
+import { OFFICIAL_CALENDAR_URL, type Race, type Selection } from './types'
 import { MOBILE_QUERY, useMediaQuery } from './useMediaQuery'
 
 type View = 'map' | 'calendar' | 'list'
@@ -103,6 +103,11 @@ export default function App() {
             <small>Ski-mountaineering in the French Alps · 2026–27</small>
           </span>
         </h1>
+        {!mobile && (
+          <a className="official-link" href={OFFICIAL_CALENDAR_URL} target="_blank" rel="noopener noreferrer">
+            Official calendar ↗
+          </a>
+        )}
         <nav className="tabs">
           {(['map', 'calendar', 'list'] as View[]).map((v) => (
             <button key={v} className={view === v ? 'on' : ''} aria-current={view === v} onClick={() => setView(v)}>

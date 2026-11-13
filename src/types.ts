@@ -39,6 +39,9 @@ export const LEVELS: Level[] = [
   'Open',
 ]
 
+/** The federation's race calendar: the source of truth for dates and details. */
+export const OFFICIAL_CALENDAR_URL = 'https://www.ski-alpinisme.fr/calendrier'
+
 export const LEVEL_COLORS: Record<Level, string> = {
   Classic: '#d1495b',
   International: '#7b2cbf',
