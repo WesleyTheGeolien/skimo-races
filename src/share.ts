@@ -1,4 +1,3 @@
-import { formatDateRange } from './filters'
 import type { Race, Selection } from './types'
 
 const PARAM = 'race'
@@ -22,10 +21,10 @@ export type ShareResult = 'shared' | 'copied' | 'cancelled' | 'failed'
 /** Share a link to `race` with the system share sheet, or copy it when there is none. */
 export async function shareRace(race: Race, href = window.location.href): Promise<ShareResult> {
   const url = urlForSelection(href, { kind: 'race', id: race.id })
-  const text = `${race.name} · ${formatDateRange(race)} · ${race.location}`
   if (navigator.share) {
     try {
-      await navigator.share({ title: race.name, text, url })
+      // URL only: given `text` as well, iOS share targets (Messages, Copy, Notes…) often keep the text and drop the link.
+      await navigator.share({ title: race.name, url })
       return 'shared'
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') return 'cancelled'

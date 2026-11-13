@@ -31,7 +31,8 @@ describe('shareRace', () => {
     const share = vi.fn().mockResolvedValue(undefined)
     vi.stubGlobal('navigator', { share })
     expect(await shareRace(race, BASE)).toBe('shared')
-    expect(share).toHaveBeenCalledWith(expect.objectContaining({ title: 'Pierra Menta', url: `${BASE}?race=abc` }))
+    // No `text`: iOS share targets drop the link when text is present.
+    expect(share).toHaveBeenCalledWith({ title: 'Pierra Menta', url: `${BASE}?race=abc` })
   })
 
   it('reports a dismissed share sheet as cancelled', async () => {
