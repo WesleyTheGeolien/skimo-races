@@ -27,12 +27,6 @@ export interface Race {
   is_night: boolean
 }
 
-export interface Home {
-  name: string
-  lat: number
-  lon: number
-}
-
 export type Selection = { kind: 'race'; id: string } | { kind: 'place'; key: string } | null
 
 export const LEVELS: Level[] = [

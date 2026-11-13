@@ -1,58 +1,29 @@
-import { formatDateRange, placeKey, raceDistance } from '../filters'
-import { LEVEL_COLORS, type Home, type Race, type Selection } from '../types'
+import { formatDateRange, nextRace, placeKey } from '../filters'
+import { colorFor, type ColorBy } from '../colors'
+import { LEVEL_COLORS, type Race, type Selection } from '../types'
 
 interface Props {
   races: Race[] // all races, so a selection survives filter changes
   selection: Selection
   onSelect: (s: Selection) => void
-  home: Home
+  colorBy: ColorBy
 }
 
-export function DetailPanel({ races, selection, onSelect, home }: Props) {
-  if (!selection) {
-    return (
-      <aside className="detail empty-detail">
-        <p>Pick a race on the map, calendar or list to see its details.</p>
-      </aside>
-    )
-  }
+export function DetailPanel({ races, selection, onSelect, colorBy }: Props) {
+  // Nothing selected: the compact race list below takes the whole column.
+  if (!selection) return null
 
-  if (selection.kind === 'place') {
-    const list = races.filter((r) => placeKey(r) === selection.key)
-    if (!list.length) return null
-    const d = raceDistance(list[0], home)
-    return (
-      <aside className="detail">
-        <button className="close" onClick={() => onSelect(null)} aria-label="Close">
-          ×
-        </button>
-        <h2>{list[0].location}</h2>
-        <p className="muted">
-          {[list[0].region, list[0].country].filter(Boolean).join(', ')}
-          {d != null && ` · ${Math.round(d)} km from ${home.name}`}
-        </p>
-        <ul className="place-list">
-          {list.map((r) => (
-            <li key={r.id}>
-              <button className="link" onClick={() => onSelect({ kind: 'race', id: r.id })}>
-                <span className="dot" style={{ background: LEVEL_COLORS[r.level] }} />
-                {formatDateRange(r)} — {r.name}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </aside>
-    )
-  }
-
-  const r = races.find((x) => x.id === selection.id)
+  // A map marker: show the venue's next race in full, with its other races below.
+  const r =
+    selection.kind === 'race'
+      ? races.find((x) => x.id === selection.id)
+      : nextRace(races.filter((x) => placeKey(x) === selection.key))
   if (!r) return null
-  const d = raceDistance(r, home)
   const key = placeKey(r)
-  const sameVenue = key ? races.filter((x) => placeKey(x) === key).length : 1
+  const others = key ? races.filter((x) => placeKey(x) === key && x.id !== r.id) : []
 
   return (
-    <aside className="detail">
+    <div className="detail">
       <button className="close" onClick={() => onSelect(null)} aria-label="Close">
         ×
       </button>
@@ -62,7 +33,6 @@ export function DetailPanel({ races, selection, onSelect, home }: Props) {
         {r.location}
         {r.region ? `, ${r.region}` : ''}
         {r.country !== 'France' ? `, ${r.country}` : ''}
-        {d != null && ` · ${Math.round(d)} km from ${home.name}`}
       </p>
       <div className="badges">
         <span className="badge" style={{ background: LEVEL_COLORS[r.level] }}>
@@ -84,11 +54,21 @@ export function DetailPanel({ races, selection, onSelect, home }: Props) {
           </a>
         </div>
       )}
-      {key && sameVenue > 1 && (
-        <button className="link small" onClick={() => onSelect({ kind: 'place', key })}>
-          See all {sameVenue} races at {r.location}
-        </button>
+      {others.length > 0 && (
+        <>
+          <h3 className="other-races">Also at {r.location}</h3>
+          <ul className="place-list">
+            {others.map((o) => (
+              <li key={o.id}>
+                <button className="link" onClick={() => onSelect({ kind: 'race', id: o.id })}>
+                  <span className="dot" style={{ background: colorFor(o, colorBy) }} />
+                  {formatDateRange(o)} — {o.name}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
-    </aside>
+    </div>
   )
 }

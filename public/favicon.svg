@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Keep in sync with src/components/Logo.tsx -->
+  <defs>
+    <g id="body" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <path d="M25 24 L19 38"/>
+      <path d="M19 38 L17 45 L15 51"/>
+      <path d="M19 38 L25 31 L26 38"/>
+      <path d="M25 25 L32 23"/>
+    </g>
+    <g id="skis" stroke-linecap="round">
+      <line x1="10" y1="40" x2="17" y2="8"/>
+      <line x1="14" y1="41" x2="22" y2="10"/>
+    </g>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#0f2a4a"/>
+  <!-- snow slope, about 49 degrees -->
+  <path d="M5.7 61.4 L57.2 2.2 A14 14 0 0 1 64 14 L64 50 A14 14 0 0 1 50 64 L14 64 A14 14 0 0 1 5.7 61.4 Z" fill="#dbe5f0"/>
+  <use href="#skis" stroke="#0f2a4a" stroke-width="6"/>
+  <use href="#skis" stroke="#f97316" stroke-width="3"/>
+  <!-- pole -->
+  <line x1="32" y1="23" x2="35" y2="28" stroke="#0f2a4a" stroke-width="4" stroke-linecap="round"/>
+  <line x1="32" y1="23" x2="35" y2="28" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+  <use href="#body" stroke="#0f2a4a" stroke-width="7"/>
+  <use href="#body" stroke="#ffffff" stroke-width="4"/>
+  <circle cx="29" cy="17" r="6.5" fill="#0f2a4a"/>
+  <circle cx="29" cy="17" r="5" fill="#ffffff"/>
+</svg>

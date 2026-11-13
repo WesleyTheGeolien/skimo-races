@@ -1,10 +1,12 @@
-import { useMemo, useState } from 'react'
-import { LEVEL_COLORS, type Race, type Selection } from '../types'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { colorFor, type ColorBy } from '../colors'
+import type { Race, Selection } from '../types'
 
 interface Props {
   races: Race[]
   selection: Selection
   onSelect: (s: Selection) => void
+  colorBy: ColorBy
 }
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -13,7 +15,7 @@ const iso = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
 /** Month grid; multi-day races appear on every day they cover. */
-export function CalendarView({ races, selection, onSelect }: Props) {
+export function CalendarView({ races, selection, onSelect, colorBy }: Props) {
   const dated = races.filter((r) => r.start_date)
   const firstMonth = useMemo(() => {
     const today = iso(new Date())
@@ -48,6 +50,31 @@ export function CalendarView({ races, selection, onSelect }: Props) {
     })
   }, [month])
 
+  // A race picked elsewhere: switch to its month if it is off the grid, then scroll to it.
+  const root = useRef<HTMLDivElement>(null)
+  const pendingScroll = useRef(false)
+  useEffect(() => {
+    if (selection?.kind !== 'race') return
+    pendingScroll.current = true
+    const r = races.find((x) => x.id === selection.id)
+    if (!r?.start_date) return
+    const first = iso(cells[0])
+    const last = iso(cells[cells.length - 1])
+    const visible = r.start_date <= last && (r.end_date ?? r.start_date) >= first
+    if (!visible) {
+      const s = new Date(`${r.start_date}T12:00:00`)
+      setMonth(new Date(s.getFullYear(), s.getMonth(), 1))
+    }
+  }, [selection]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!pendingScroll.current) return
+    // When the month is switching, the event only exists after the next render.
+    const el = root.current?.querySelector('.cal-event.sel')
+    if (!el) return
+    pendingScroll.current = false
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }, [selection, month])
+
   const shift = (n: number) => setMonth(new Date(month.getFullYear(), month.getMonth() + n, 1))
   const today = iso(new Date())
   const tbc = races.filter((r) => !r.start_date)
@@ -57,7 +84,7 @@ export function CalendarView({ races, selection, onSelect }: Props) {
   }).length
 
   return (
-    <div className="calendar">
+    <div className="calendar" ref={root}>
       <div className="cal-head">
         <button onClick={() => shift(-1)} aria-label="Previous month">
           ‹
@@ -87,7 +114,7 @@ export function CalendarView({ races, selection, onSelect }: Props) {
                 <button
                   key={r.id}
                   className={`cal-event ${selection?.kind === 'race' && selection.id === r.id ? 'sel' : ''}`}
-                  style={{ borderLeftColor: LEVEL_COLORS[r.level] }}
+                  style={{ borderLeftColor: colorFor(r, colorBy) }}
                   title={`${r.name} — ${r.location}`}
                   onClick={() => onSelect({ kind: 'race', id: r.id })}
                 >
@@ -104,8 +131,8 @@ export function CalendarView({ races, selection, onSelect }: Props) {
           {tbc.map((r) => (
             <button
               key={r.id}
-              className="cal-event"
-              style={{ borderLeftColor: LEVEL_COLORS[r.level] }}
+              className={`cal-event ${selection?.kind === 'race' && selection.id === r.id ? 'sel' : ''}`}
+              style={{ borderLeftColor: colorFor(r, colorBy) }}
               onClick={() => onSelect({ kind: 'race', id: r.id })}
             >
               {r.name} · {r.location}

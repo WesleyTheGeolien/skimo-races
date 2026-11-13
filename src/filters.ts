@@ -1,14 +1,11 @@
-import type { Home, Level, Race } from './types'
+import type { Level, Race } from './types'
 
 export interface Filters {
   search: string
   levels: Level[] // empty = all
-  disciplines: string[] // empty = all
-  maxKm: number | null // null = any distance
-  from: string // YYYY-MM-DD, '' = no lower bound
-  to: string
+  disciplines: string[] // empty = all; 'none' matches races with no listed discipline
+  months: string[] // month numbers '1'–'12', or 'none' for undated; empty = all
   nightOnly: boolean
-  includeTbc: boolean
   hideSeries: boolean // collapse weekly series (e.g. Millet Courchevel) to their first date
 }
 
@@ -16,28 +13,9 @@ export const DEFAULT_FILTERS: Filters = {
   search: '',
   levels: [],
   disciplines: [],
-  maxKm: 200,
-  from: '',
-  to: '',
+  months: [],
   nightOnly: false,
-  includeTbc: true,
   hideSeries: false,
-}
-
-export const DEFAULT_HOME: Home = { name: 'Mercury', lat: 45.683, lon: 6.333 }
-
-/** Great-circle distance in km. */
-export function distanceKm(aLat: number, aLon: number, bLat: number, bLon: number): number {
-  const r = (d: number) => (d * Math.PI) / 180
-  const dLat = r(bLat - aLat)
-  const dLon = r(bLon - aLon)
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(r(aLat)) * Math.cos(r(bLat)) * Math.sin(dLon / 2) ** 2
-  return 6371 * 2 * Math.asin(Math.sqrt(h))
-}
-
-export function raceDistance(race: Race, home: Home): number | null {
-  if (race.lat == null || race.lon == null) return null
-  return distanceKm(home.lat, home.lon, race.lat, race.lon)
 }
 
 const normalise = (s: string) =>
@@ -46,29 +24,32 @@ const normalise = (s: string) =>
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
 
+/** Start month as '1'–'12', or 'none' when the date is not set. */
+export const monthKey = (r: Race): string => (r.start_date ? String(Number(r.start_date.slice(5, 7))) : 'none')
+
+const disciplineKeys = (r: Race): string[] => (r.disciplines.length ? r.disciplines : ['none'])
+
+/** Today's local date as YYYY-MM-DD. */
+export const todayIso = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+/** A race whose last day is before `today`. Undated races are never past. */
+export const isPast = (r: Race, today = todayIso()): boolean =>
+  !!r.start_date && (r.end_date ?? r.start_date) < today
+
 /** Series key: same name at the same place, ignoring the date. */
 export const seriesKey = (r: Race) => `${r.name.replace(/\s+–\s+Finale$/, '')}|${r.location}`
 
-export function applyFilters(races: Race[], f: Filters, home: Home): Race[] {
+export function applyFilters(races: Race[], f: Filters): Race[] {
   const q = normalise(f.search.trim())
   const seen = new Set<string>()
   return races.filter((r) => {
     if (q && !normalise(`${r.name} ${r.location} ${r.region ?? ''} ${r.country} ${r.details ?? ''}`).includes(q))
       return false
     if (f.levels.length && !f.levels.includes(r.level)) return false
-    if (f.disciplines.length && !r.disciplines.some((d) => f.disciplines.includes(d))) return false
+    if (f.disciplines.length && !disciplineKeys(r).some((d) => f.disciplines.includes(d))) return false
+    if (f.months.length && !f.months.includes(monthKey(r))) return false
     if (f.nightOnly && !r.is_night) return false
-    if (!r.start_date) {
-      if (!f.includeTbc) return false
-    } else {
-      const end = r.end_date ?? r.start_date
-      if (f.from && end < f.from) return false
-      if (f.to && r.start_date > f.to) return false
-    }
-    if (f.maxKm != null) {
-      const d = raceDistance(r, home)
-      if (d == null || d > f.maxKm) return false
-    }
     if (f.hideSeries) {
       const k = seriesKey(r)
       if (seen.has(k)) return false
@@ -80,6 +61,12 @@ export function applyFilters(races: Race[], f: Filters, home: Home): Race[] {
 
 export function placeKey(r: Race): string | null {
   return r.lat == null || r.lon == null ? null : `${r.lat},${r.lon}`
+}
+
+/** The first race (in date order) that has not finished by `today`, else the first race. */
+export function nextRace(races: Race[], today = new Date().toISOString().slice(0, 10)): Race | undefined {
+  const sorted = [...races].sort((a, b) => (a.start_date ?? '9999').localeCompare(b.start_date ?? '9999'))
+  return sorted.find((r) => r.start_date && (r.end_date ?? r.start_date) >= today) ?? sorted[0]
 }
 
 export function formatDateRange(r: Race): string {

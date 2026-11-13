@@ -3,19 +3,28 @@ import type { FeatureCollection, Point } from 'geojson'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { useEffect, useMemo, useRef } from 'react'
 import { placeKey } from '../filters'
-import { LEVEL_COLORS, LEVELS, type Home, type Race, type Selection } from '../types'
+import { placeColor, type ColorBy } from '../colors'
+import type { Race, Selection } from '../types'
+import { EmptyState } from './Logo'
+import { applyWinterTheme } from '../winter'
 
 const TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined
 
+/** Initial view: the French Alps, from the Mercantour to Lake Geneva. */
+const FRENCH_ALPS: mapboxgl.LngLatBoundsLike = [
+  [5.2, 43.7],
+  [7.8, 46.5],
+]
+
 interface Props {
   races: Race[]
-  home: Home
   selection: Selection
   onSelect: (s: Selection) => void
+  colorBy: ColorBy
 }
 
 /** One feature per place, so a venue with many dates (Courchevel) is one dot sized by count. */
-function toGeoJSON(races: Race[]): FeatureCollection<Point> {
+function toGeoJSON(races: Race[], colorBy: ColorBy): FeatureCollection<Point> {
   const byPlace = new Map<string, Race[]>()
   for (const r of races) {
     const k = placeKey(r)
@@ -25,23 +34,20 @@ function toGeoJSON(races: Race[]): FeatureCollection<Point> {
   return {
     type: 'FeatureCollection',
     features: [...byPlace.entries()].map(([key, list]) => {
-      // Colour the dot by its most prestigious race.
-      const top = LEVELS.find((l) => list.some((r) => r.level === l)) ?? 'Open'
       return {
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [list[0].lon!, list[0].lat!] },
-        properties: { key, count: list.length, color: LEVEL_COLORS[top], label: list[0].location },
+        properties: { key, count: list.length, color: placeColor(list, colorBy), label: list[0].location },
       }
     }),
   }
 }
 
-export function MapView({ races, home, selection, onSelect }: Props) {
+export function MapView({ races, selection, onSelect, colorBy }: Props) {
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
-  const homeMarker = useRef<mapboxgl.Marker | null>(null)
   const ready = useRef(false)
-  const geojson = useMemo(() => toGeoJSON(races), [races])
+  const geojson = useMemo(() => toGeoJSON(races, colorBy), [races, colorBy])
   const geojsonRef = useRef(geojson)
   geojsonRef.current = geojson
   const onSelectRef = useRef(onSelect)
@@ -53,14 +59,15 @@ export function MapView({ races, home, selection, onSelect }: Props) {
     const m = new mapboxgl.Map({
       container: container.current,
       style: 'mapbox://styles/mapbox/outdoors-v12',
-      center: [home.lon, home.lat],
-      zoom: 7,
+      bounds: FRENCH_ALPS,
+      fitBoundsOptions: { padding: 20 },
     })
     map.current = m
     m.addControl(new mapboxgl.NavigationControl(), 'top-right')
     m.addControl(new mapboxgl.ScaleControl({ unit: 'metric' }), 'bottom-left')
 
     m.on('load', () => {
+      applyWinterTheme(m)
       m.addSource('races', { type: 'geojson', data: geojsonRef.current })
       m.addLayer({
         id: 'race-dots',
@@ -103,34 +110,22 @@ export function MapView({ races, home, selection, onSelect }: Props) {
       m.on('mouseenter', 'race-dots', () => (m.getCanvas().style.cursor = 'pointer'))
       m.on('mouseleave', 'race-dots', () => (m.getCanvas().style.cursor = ''))
       ready.current = true
-      fit(m, geojsonRef.current, home)
     })
     return () => {
       ready.current = false
       m.remove()
       map.current = null
     }
-    // The map is created once; data and home are pushed in by the effects below.
+    // The map is created once; data is pushed in by the effect below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Push filtered data and refit when the set of places changes.
+  // Push filtered data; the view stays on the Alps.
   useEffect(() => {
     const m = map.current
     if (!m || !ready.current) return
     ;(m.getSource('races') as mapboxgl.GeoJSONSource | undefined)?.setData(geojson)
-    fit(m, geojson, home)
   }, [geojson]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    const m = map.current
-    if (!m) return
-    homeMarker.current?.remove()
-    const el = document.createElement('div')
-    el.className = 'home-marker'
-    el.title = home.name
-    homeMarker.current = new mapboxgl.Marker({ element: el }).setLngLat([home.lon, home.lat]).addTo(m)
-  }, [home])
 
   // Fly to a race picked from the list or calendar.
   useEffect(() => {
@@ -149,32 +144,16 @@ export function MapView({ races, home, selection, onSelect }: Props) {
 
   if (!TOKEN) {
     return (
-      <div className="map-missing">
-        <p>
-          Add your Mapbox token to <code>.env</code> as <code>VITE_MAPBOX_TOKEN</code> and restart{' '}
-          <code>npm run dev</code> to see the map.
-        </p>
-      </div>
+      <EmptyState>
+        Add your Mapbox token to <code>.env</code> as <code>VITE_MAPBOX_TOKEN</code> and restart{' '}
+        <code>npm run dev</code> to see the map.
+      </EmptyState>
     )
   }
 
   return (
     <div className="map-wrap">
       <div ref={container} className="map" />
-      <div className="legend">
-        {LEVELS.map((l) => (
-          <span key={l}>
-            <span className="dot" style={{ background: LEVEL_COLORS[l] }} />
-            {l}
-          </span>
-        ))}
-      </div>
     </div>
   )
-}
-
-function fit(m: mapboxgl.Map, data: FeatureCollection<Point>, home: Home) {
-  const b = new mapboxgl.LngLatBounds([home.lon, home.lat], [home.lon, home.lat])
-  data.features.forEach((f) => b.extend(f.geometry.coordinates as [number, number]))
-  m.fitBounds(b, { padding: 60, maxZoom: 10, duration: 600 })
 }
