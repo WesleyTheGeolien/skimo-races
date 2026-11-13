@@ -214,6 +214,27 @@ main { min-width: 0; min-height: 0; overflow: auto; position: relative; }
   border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--text); font-weight: 600;
 }
 .filters-button.on { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+/* Phone colour key floating over the map. */
+.map-legend {
+  position: absolute; top: 10px; left: 10px; z-index: 5; max-width: 60%; max-height: calc(100% - 60px); overflow-y: auto;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 2px 10px rgb(10 28 51 / 0.18);
+  font-size: 12px;
+}
+.map-legend-head { display: flex; align-items: center; border-bottom: 1px solid var(--line); }
+.map-legend.folded .map-legend-head { border-bottom: 0; }
+.map-legend-head button { border: 0; background: none; min-height: 36px; color: var(--muted); }
+.map-legend-mode {
+  flex: 1; padding: 0 10px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.05em; white-space: nowrap;
+}
+.map-legend-fold { width: 36px; font-size: 18px; line-height: 1; }
+.map-legend ul { list-style: none; margin: 0; padding: 4px 0; }
+.map-legend li button {
+  display: flex; align-items: center; width: 100%; min-height: 30px; padding: 0 10px; border: 0; background: none;
+  color: var(--text); text-align: left; white-space: nowrap;
+}
+.map-legend li button.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.map-legend li button.dim { opacity: 0.5; }
 .filters-count {
   min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--ski-deep); color: #fff;
   font-size: 12px; line-height: 20px; text-align: center;

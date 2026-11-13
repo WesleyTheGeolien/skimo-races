@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { type ColorBy } from './colors'
-import { ColorKey } from './components/ColorKey'
+import { ColorKey, MapLegend } from './components/ColorKey'
 import { CalendarView } from './components/CalendarView'
 import { CompactList } from './components/CompactList'
 import { DetailPanel } from './components/DetailPanel'
@@ -136,6 +136,15 @@ export default function App() {
         {!mobile && filtersPanel}
         <main>
           {view === 'map' && <MapView {...viewProps} mobile={mobile} />}
+          {view === 'map' && mobile && (
+            <MapLegend
+              races={races}
+              filters={filters}
+              onChange={setFilters}
+              colorBy={colorBy}
+              onColorBy={(c) => setPrefs({ ...prefs, colorBy: c })}
+            />
+          )}
           {view === 'calendar' && <CalendarView {...viewProps} mobile={mobile} />}
           {view === 'list' && (mobile ? <CompactList {...viewProps} /> : <ListView {...viewProps} />)}
         </main>
